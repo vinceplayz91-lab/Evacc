@@ -1,0 +1,351 @@
+```python
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from typing import Dict, List
+
+# ---------------- USER ----------------
+class User:
+    def __init__(self, username, password, department):
+        self.username = username
+        self.password = password
+        self.department = department
+        self.joined_events = []
+        self.created_orgs = []
+
+    def login(self, password):
+        return self.password == password
+
+
+# ---------------- EVENT ----------------
+class Event:
+    def __init__(self, name, org_name, creator, description="", requirements=None):
+        self.name = name
+        self.org_name = org_name
+        self.creator = creator
+        self.description = description
+        self.requirements = requirements if requirements else []
+
+        self.participants = []
+        self.join_requests = []
+        self.chat_messages = []
+
+
+# ---------------- ORGANIZATION ----------------
+class Organization:
+    def __init__(self, name, creator):
+        self.name = name
+        self.creator = creator
+        self.events: List[Event] = []
+
+
+# ---------------- SYSTEM ----------------
+class ParticipationSystem:
+
+    def __init__(self):
+        self.users: Dict[str, User] = {}
+        self.organizations: Dict[str, Organization] = {}
+        self.current_user = None
+
+        # demo accounts
+        self.users["admin"] = User("admin", "admin123", "Administration")
+        self.users["student"] = User("student", "1234", "Computer Science")
+
+    def register_user(self, username, password, department):
+        if username not in self.users:
+            self.users[username] = User(username, password, department)
+            return True
+        return False
+
+    def login_user(self, username, password):
+        if username in self.users and self.users[username].login(password):
+            self.current_user = self.users[username]
+            return True
+        return False
+
+    def create_org(self, name):
+        if name not in self.organizations:
+            self.organizations[name] = Organization(name, self.current_user.username)
+            self.current_user.created_orgs.append(name)
+            return True
+        return False
+
+    def create_event(self, name, org, desc, reqs):
+        if org in self.organizations:
+            event = Event(name, org, self.current_user.username, desc, reqs)
+            self.organizations[org].events.append(event)
+            return True
+        return False
+
+    def request_join(self, event):
+        user = self.current_user.username
+
+        if user not in event.join_requests and user not in event.participants:
+            event.join_requests.append(user)
+            return True
+        return False
+
+    def approve_user(self, event, username):
+        if username in event.join_requests:
+            event.join_requests.remove(username)
+            event.participants.append(username)
+            return True
+        return False
+
+    def send_message(self, event, message):
+        user = self.current_user.username
+        event.chat_messages.append(f"{user}: {message}")
+
+
+# ---------------- APP ----------------
+class ParticipationApp:
+
+    def __init__(self, root):
+
+        self.root = root
+        self.root.title("Campus Participation System")
+        self.root.geometry("900x650")
+
+        self.system = ParticipationSystem()
+
+        self.set_theme()
+        self.login_screen()
+
+    # ---------------- DARK THEME ----------------
+    def set_theme(self):
+
+        self.root.configure(bg="#0f172a")
+
+        style = ttk.Style()
+        style.theme_use("clam")
+
+        style.configure("TFrame", background="#0f172a")
+        style.configure("TLabel", background="#0f172a", foreground="white")
+
+        style.configure("TButton",
+                        background="#1e3a8a",
+                        foreground="white",
+                        padding=6)
+
+    # ---------------- LOGIN SCREEN ----------------
+    def login_screen(self):
+
+        self.clear()
+
+        title = ttk.Label(self.root,
+                          text="Campus Participation System",
+                          font=("Arial", 22, "bold"))
+        title.pack(pady=40)
+
+        frame = ttk.Frame(self.root)
+        frame.pack()
+
+        ttk.Label(frame, text="Username").grid(row=0, column=0, pady=5)
+        self.username = ttk.Entry(frame)
+        self.username.grid(row=0, column=1)
+
+        ttk.Label(frame, text="Password").grid(row=1, column=0, pady=5)
+        self.password = ttk.Entry(frame, show="*")
+        self.password.grid(row=1, column=1)
+
+        ttk.Button(frame, text="Login", command=self.login).grid(row=2, columnspan=2, pady=10)
+        ttk.Button(frame, text="Register", command=self.register_window).grid(row=3, columnspan=2)
+
+    # ---------------- REGISTER ----------------
+    def register_window(self):
+
+        win = tk.Toplevel(self.root)
+        win.title("Register")
+
+        ttk.Label(win, text="Username").pack()
+        u = ttk.Entry(win)
+        u.pack()
+
+        ttk.Label(win, text="Password").pack()
+        p = ttk.Entry(win)
+        p.pack()
+
+        ttk.Label(win, text="Department").pack()
+        d = ttk.Entry(win)
+        d.pack()
+
+        def register():
+            if self.system.register_user(u.get(), p.get(), d.get()):
+                messagebox.showinfo("Success", "User Registered")
+                win.destroy()
+            else:
+                messagebox.showerror("Error", "Username exists")
+
+        ttk.Button(win, text="Register", command=register).pack(pady=10)
+
+    # ---------------- LOGIN ----------------
+    def login(self):
+
+        if self.system.login_user(self.username.get(), self.password.get()):
+            self.dashboard()
+        else:
+            messagebox.showerror("Error", "Invalid login")
+
+    # ---------------- DASHBOARD ----------------
+    def dashboard(self):
+
+        self.clear()
+
+        ttk.Label(self.root,
+                  text=f"Welcome {self.system.current_user.username}",
+                  font=("Arial", 16, "bold")).pack(pady=10)
+
+        menu = ttk.Frame(self.root)
+        menu.pack()
+
+        ttk.Button(menu, text="Create Org", command=self.create_org).pack(side="left", padx=5)
+        ttk.Button(menu, text="Create Event", command=self.create_event).pack(side="left", padx=5)
+        ttk.Button(menu, text="View Orgs", command=self.view_orgs).pack(side="left", padx=5)
+        ttk.Button(menu, text="Join Event", command=self.join_event).pack(side="left", padx=5)
+        ttk.Button(menu, text="View Requests", command=self.view_requests).pack(side="left", padx=5)
+
+        self.display = scrolledtext.ScrolledText(self.root, width=100, height=30)
+        self.display.pack(pady=20)
+
+    # ---------------- CREATE ORG ----------------
+    def create_org(self):
+
+        win = tk.Toplevel(self.root)
+
+        ttk.Label(win, text="Organization Name").pack()
+        entry = ttk.Entry(win)
+        entry.pack()
+
+        def create():
+
+            if self.system.create_org(entry.get()):
+                messagebox.showinfo("Success", "Organization Created")
+                win.destroy()
+            else:
+                messagebox.showerror("Error", "Organization exists")
+
+        ttk.Button(win, text="Create", command=create).pack()
+
+    # ---------------- CREATE EVENT ----------------
+    def create_event(self):
+
+        win = tk.Toplevel(self.root)
+
+        ttk.Label(win, text="Organization").pack()
+        org = ttk.Combobox(win, values=list(self.system.organizations.keys()))
+        org.pack()
+
+        ttk.Label(win, text="Event Name").pack()
+        name = ttk.Entry(win)
+        name.pack()
+
+        ttk.Label(win, text="Description").pack()
+        desc = tk.Text(win, height=3)
+        desc.pack()
+
+        ttk.Label(win, text="Requirements (comma separated)").pack()
+        req = ttk.Entry(win)
+        req.pack()
+
+        def create():
+
+            requirements = [r.strip() for r in req.get().split(",")]
+
+            if self.system.create_event(name.get(), org.get(),
+                                        desc.get("1.0", tk.END),
+                                        requirements):
+
+                messagebox.showinfo("Success", "Event Created")
+                win.destroy()
+
+        ttk.Button(win, text="Create Event", command=create).pack()
+
+    # ---------------- VIEW ORGS ----------------
+    def view_orgs(self):
+
+        self.display.delete(1.0, tk.END)
+
+        for org in self.system.organizations.values():
+
+            self.display.insert(tk.END, f"\nOrganization: {org.name}\n")
+
+            for event in org.events:
+
+                self.display.insert(
+                    tk.END,
+                    f"Event: {event.name}\n"
+                    f"Description: {event.description}\n"
+                    f"Requirements: {', '.join(event.requirements)}\n"
+                    f"Participants: {len(event.participants)}\n\n"
+                )
+
+    # ---------------- JOIN EVENT ----------------
+    def join_event(self):
+
+        win = tk.Toplevel(self.root)
+
+        ttk.Label(win, text="Organization").pack()
+        org_box = ttk.Combobox(win, values=list(self.system.organizations.keys()))
+        org_box.pack()
+
+        event_box = ttk.Combobox(win)
+        event_box.pack()
+
+        def update(*args):
+
+            org = org_box.get()
+
+            if org in self.system.organizations:
+                event_box["values"] = [e.name for e in self.system.organizations[org].events]
+
+        org_box.bind("<<ComboboxSelected>>", update)
+
+        def request():
+
+            org = org_box.get()
+            ev = event_box.get()
+
+            for event in self.system.organizations[org].events:
+
+                if event.name == ev:
+                    if self.system.request_join(event):
+                        messagebox.showinfo("Success", "Join Request Sent")
+                        win.destroy()
+
+        ttk.Button(win, text="Request Join", command=request).pack()
+
+    # ---------------- VIEW REQUESTS ----------------
+    def view_requests(self):
+
+        self.display.delete(1.0, tk.END)
+
+        for org in self.system.organizations.values():
+
+            for event in org.events:
+
+                if event.creator == self.system.current_user.username:
+
+                    self.display.insert(tk.END, f"\nEvent: {event.name}\n")
+
+                    for user in event.join_requests:
+
+                        u = self.system.users[user]
+
+                        self.display.insert(
+                            tk.END,
+                            f"User: {u.username} | Department: {u.department}\n"
+                        )
+
+    # ---------------- UTILITY ----------------
+    def clear(self):
+
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+
+# ---------------- RUN PROGRAM ----------------
+if __name__ == "__main__":
+
+    root = tk.Tk()
+    app = ParticipationApp(root)
+    root.mainloop()
+```
