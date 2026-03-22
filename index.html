@@ -1,93 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Unified Participation System</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unified Participation System</title>
+<style>
+body{margin:0;font-family:'Segoe UI';background:linear-gradient(135deg,#020617,#0f172a);color:#e6f0ff}
+#app{display:flex;height:100vh}
+.sidebar{width:240px;background:#020617;padding:20px}
+.sidebar h2{color:#60a5fa}
+.sidebar li{padding:10px;border-radius:10px;cursor:pointer}
+.sidebar li:hover{background:#1e3a8a}
+main{flex:1;padding:20px;overflow:auto}
+.hidden{display:none}
+.card{background:rgba(30,41,59,.9);padding:15px;border-radius:15px;margin-bottom:15px}
+button{background:linear-gradient(45deg,#3b82f6,#1d4ed8);border:none;padding:10px;border-radius:10px;color:white;cursor:pointer}
+input,textarea{width:100%;padding:10px;margin:5px 0;border-radius:10px;border:none;background:#020617;color:white}
+.topbar{display:flex;justify-content:space-between}
+.user-icon{width:40px;height:40px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.chat{height:200px;overflow:auto;background:#020617;padding:10px;border-radius:10px}
+.notif{background:#1e3a8a;padding:10px;border-radius:10px;margin-bottom:10px}
+.schedule-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.schedule-grid div{background:#020617;padding:10px;border-radius:8px}
+</style>
 </head>
 <body>
-    <div id="app">
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar">
-            <h2>School Portal</h2>
-            <ul>
-                <li onclick="UI.showDashboard()">Dashboard</li>
-                <li onclick="UI.showEventCreation()">Create Event</li>
-                <li onclick="UI.showProfile()">Profile</li>
-            </ul>
-        </nav>
-
-        <!-- Main Content -->
-        <main id="main-content">
-            <!-- Login/Register -->
-            <section id="auth-section">
-                <h2>Login / Register</h2>
-                <form id="auth-form">
-                    <input type="text" id="name" placeholder="Full Name" required>
-                    <input type="text" id="department" placeholder="Department" required>
-                    <select id="role">
-                        <option value="Member">Member</option>
-                        <option value="Organizer">Event Creator</option>
-                    </select>
-                    <input type="password" id="password" placeholder="Password" required>
-                    <button type="submit">Login / Register</button>
-                </form>
-            </section>
-
-            <!-- Dashboard -->
-            <section id="dashboard" class="hidden">
-                <h2>Dashboard</h2>
-                <div id="event-list" class="card-container"></div>
-            </section>
-
-            <!-- Event Creation -->
-            <section id="event-creation" class="hidden">
-                <h2>Create Event</h2>
-                <form id="create-event-form">
-                    <input type="text" id="event-title" placeholder="Event Title" required>
-                    <textarea id="event-desc" placeholder="Event Description"></textarea>
-                    <textarea id="event-req" placeholder="Event Requirements"></textarea>
-                    <input type="datetime-local" id="event-datetime" required>
-                    <input type="text" id="event-org" placeholder="Organization (Optional)">
-                    <button type="submit">Create Event</button>
-                </form>
-            </section>
-
-            <!-- Event Details / Chat -->
-            <section id="event-details" class="hidden">
-                <button onclick="UI.backToDashboard()">← Back</button>
-                <h2 id="detail-title"></h2>
-                <p id="detail-desc"></p>
-                <p id="detail-req"></p>
-                <p><strong>Organizer:</strong> <span id="detail-organizer"></span></p>
-                <p><strong>Participants:</strong> <span id="detail-participants"></span></p>
-
-                <button id="join-event-btn" onclick="UI.requestJoinEvent()">Join Event</button>
-
-                <div id="chat-section">
-                    <h3>Event Chat</h3>
-                    <div id="chat-messages" class="chat-box"></div>
-                    <input type="text" id="chat-input" placeholder="Type a message...">
-                    <button onclick="UI.sendMessage()">Send</button>
-                </div>
-
-                <div id="join-requests" class="hidden">
-                    <h3>Join Requests</h3>
-                    <div id="request-list"></div>
-                </div>
-            </section>
-
-            <!-- Profile -->
-            <section id="profile" class="hidden">
-                <h2>Profile</h2>
-                <p><strong>Name:</strong> <span id="profile-name"></span></p>
-                <p><strong>Department:</strong> <span id="profile-dept"></span></p>
-                <p><strong>Role:</strong> <span id="profile-role"></span></p>
-            </section>
-        </main>
-    </div>
-
-    <script src="script.js"></script>
+<div id="app">
+<div class="sidebar">
+<h2>Portal</h2>
+<ul>
+<li onclick="UI.showDashboard()">Dashboard</li>
+<li onclick="UI.showMyEvents()">My Events</li>
+<li onclick="UI.showCreate()">Create</li>
+<li onclick="UI.showNotifications()">Notifications</li>
+</ul>
+</div>
+<main>
+<div class="topbar"><h2>Portal</h2><div class="user-icon" onclick="UI.showProfile()">👤</div></div>
+<section id="auth"></section>
+<section id="dash" class="hidden"></section>
+<section id="mine" class="hidden"></section>
+<section id="create" class="hidden"></section>
+<section id="profile" class="hidden"></section>
+<section id="event" class="hidden"></section>
+<section id="notif" class="hidden"></section>
+</main>
+</div>
+<script>
+class User{constructor(d){Object.assign(this,d)}}
+class Event{constructor(d){Object.assign(this,d)}}
+class Manager{
+ constructor(){this.users=JSON.parse(localStorage.users||"[]");this.events=JSON.parse(localStorage.events||"[]");this.notifs=JSON.parse(localStorage.notifs||"[]")}
+ save(){localStorage.users=JSON.stringify(this.users);localStorage.events=JSON.stringify(this.events);localStorage.notifs=JSON.stringify(this.notifs)}
+}
+const UI={manager:new Manager(),currentUser:null,currentEvent:null,
+init(){let u=JSON.parse(localStorage.currentUser||"null");if(u){if(confirm("Continue as "+u.name+"?")){this.currentUser=u;this.showDashboard();return}}this.showAuth()},
+showAuth(){this.hideAll();auth.classList.remove('hidden');auth.innerHTML=`<div class='card'>
+<h3>Account</h3>
+<input id='email' placeholder='Gmail'>
+<input id='pass' type='password' placeholder='Password'>
+<button onclick='UI.login()'>Sign In</button>
+<hr>
+<button onclick='UI.register()'>Create Account</button></div>`},
+login(){let u=this.manager.users.find(x=>x.gmail===email.value&&x.password===pass.value);
+if(u){this.currentUser=u;localStorage.currentUser=JSON.stringify(u);this.showDashboard()}else alert('Invalid')},
+register(){let u=new User({name:prompt('Name'),gmail:prompt('Gmail'),password:prompt('Password'),bio:'',dept:'',contact:'',birth:'',sex:'',schedule:''});
+this.manager.users.push(u);this.manager.save();alert('Created')},
+showDashboard(){this.hideAll();dash.classList.remove('hidden');let h="<h3>Events</h3>";
+this.manager.events.forEach(e=>{h+=`<div class='card'><b>${e.title}</b><br><button onclick="UI.view('${e.title}')">Open</button></div>`});
+dash.innerHTML=h},
+showMyEvents(){this.hideAll();mine.classList.remove('hidden');let h="<h3>My Events</h3>";
+this.manager.events.filter(e=>e.org===this.currentUser.gmail).forEach(e=>{
+h+=`<div class='card'><b>${e.title}</b><br>
+<button onclick="UI.edit('${e.title}')">Edit</button></div>`});mine.innerHTML=h},
+showCreate(){this.hideAll();create.classList.remove('hidden');create.innerHTML=`<div class='card'>
+<input id='t' placeholder='Title'>
+<textarea id='d'></textarea>
+<button onclick='UI.create()'>Create</button></div>`},
+create(){let e=new Event({title:t.value,desc:d.value,org:this.currentUser.gmail,participants:[],chat:[]});
+this.manager.events.push(e);this.manager.save();this.showDashboard()},
+view(title){this.currentEvent=this.manager.events.find(e=>e.title===title);
+this.hideAll();event.classList.remove('hidden');
+event.innerHTML=`<div class='card'>
+<h3>${this.currentEvent.title}</h3>
+<p>${this.currentEvent.desc}</p>
+<button onclick='UI.join()'>Join</button>
+<div class='chat' id='chat'></div>
+<input id='msg'><button onclick='UI.send()'>Send</button>
+</div>`;this.renderChat()},
+edit(title){let e=this.manager.events.find(x=>x.title===title);
+e.title=prompt('Title',e.title);e.desc=prompt('Desc',e.desc);
+this.manager.save();this.showMyEvents()},
+join(){this.currentEvent.participants.push(this.currentUser.gmail);
+this.manager.notifs.push({msg:`Joined ${this.currentEvent.title}`,user:this.currentUser.gmail});
+this.manager.save()},
+send(){let m=msg.value;this.currentEvent.chat.push({u:this.currentUser.name,m,time:new Date().toLocaleTimeString()});
+this.manager.save();this.renderChat()},
+renderChat(){let c=document.getElementById('chat');if(!c)return;c.innerHTML="";
+this.currentEvent.chat.forEach(x=>c.innerHTML+=`<p>[${x.time}] ${x.u}: ${x.m}</p>`)},
+showNotifications(){this.hideAll();notif.classList.remove('hidden');let h="<h3>Notifications</h3>";
+this.manager.notifs.filter(n=>n.user===this.currentUser.gmail).forEach(n=>h+=`<div class='notif'>${n.msg}</div>`);
+notif.innerHTML=h},
+showProfile(){this.hideAll();profile.classList.remove('hidden');let u=this.currentUser;
+profile.innerHTML=`<div class='card'>
+<h3>Profile</h3>
+<input id='n' value='${u.name}'>
+<input id='bio' value='${u.bio}'>
+<input id='dept' value='${u.dept}'>
+<input id='con' value='${u.contact}'>
+<input id='birth' value='${u.birth}'>
+<input id='sex' value='${u.sex}'>
+<input id='gmail' value='${u.gmail}'>
+<input id='pass2' value='${u.password}'>
+<h4>Schedule</h4>
+<div class='schedule-grid'>
+<div contenteditable id='m'>Mon</div>
+<div contenteditable id='tue'>Tue</div>
+<div contenteditable id='w'>Wed</div>
+<div contenteditable id='th'>Thu</div>
+<div contenteditable id='f'>Fri</div>
+</div>
+<button onclick='UI.saveProfile()'>Save</button>
+</div>`},
+saveProfile(){let u=this.currentUser;
+u.name=n.value;u.bio=bio.value;u.dept=dept.value;u.contact=con.value;
+u.birth=birth.value;u.sex=sex.value;u.gmail=gmail.value;u.password=pass2.value;
+this.manager.save();localStorage.currentUser=JSON.stringify(u);alert('Saved')},
+hideAll(){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'))}
+};
+UI.init();
+</script>
 </body>
 </html>
