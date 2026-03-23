@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unified Participation Management System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>UPMS</h2>
+    <ul>
+      <li id="nav-dashboard">Dashboard</li>
+      <li id="nav-my-events">My Events</li>
+      <li id="nav-create-event">Create Event</li>
+      <li id="nav-notifications">Notifications</li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main">
+    <!-- Topbar -->
+    <div id="topbar">
+      <div id="user-icon">👤</div>
+    </div>
+
+    <!-- Pages -->
+    <div id="pages">
+      <!-- Dashboard -->
+      <div id="page-dashboard" class="page">
+        <h2>Public Events</h2>
+        <div id="dashboard-events" class="cards-container"></div>
+      </div>
+
+      <!-- My Events -->
+      <div id="page-my-events" class="page hidden">
+        <h2>My Events</h2>
+        <div id="my-events-container" class="cards-container"></div>
+      </div>
+
+      <!-- Create Event -->
+      <div id="page-create-event" class="page hidden">
+        <h2>Create Event</h2>
+        <form id="create-event-form">
+          <input type="text" id="event-title" placeholder="Title" required>
+          <textarea id="event-desc" placeholder="Description" required></textarea>
+          <textarea id="event-req" placeholder="Requirements"></textarea>
+          <input type="date" id="event-date" required>
+          <input type="time" id="event-time" required>
+          <input type="text" id="event-org" placeholder="Organization (optional)">
+          <button type="submit">Create Event</button>
+        </form>
+      </div>
+
+      <!-- Notifications -->
+      <div id="page-notifications" class="page hidden">
+        <h2>Notifications</h2>
+        <div id="notifications-container"></div>
+      </div>
+
+      <!-- Profile Modal -->
+      <div id="profile-modal" class="modal hidden">
+        <div class="modal-content">
+          <span id="close-profile" class="close">&times;</span>
+          <h2>My Profile</h2>
+          <form id="profile-form">
+            <input type="text" id="profile-name" placeholder="Full Name" required>
+            <input type="email" id="profile-email" placeholder="Gmail" required>
+            <input type="password" id="profile-pass" placeholder="Password" required>
+            <input type="text" id="profile-bio" placeholder="Bio">
+            <input type="text" id="profile-dept" placeholder="Department">
+            <input type="text" id="profile-contact" placeholder="Contact Info">
+            <input type="date" id="profile-birthdate" placeholder="Birthdate">
+            <input type="text" id="profile-age" placeholder="Age" readonly>
+            <select id="profile-sex">
+              <option value="">Select Sex</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+            <h3>Weekly Schedule</h3>
+            <div id="schedule-grid">
+              <!-- JS generates Mon-Fri blocks -->
+            </div>
+            <button type="submit">Save Profile</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Event Chat Modal -->
+      <div id="chat-modal" class="modal hidden">
+        <div class="modal-content">
+          <span id="close-chat" class="close">&times;</span>
+          <h2 id="chat-title">Event Chat</h2>
+          <div id="chat-box"></div>
+          <input type="text" id="chat-input" placeholder="Type message...">
+          <button id="send-chat">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+</body>
+</html>
